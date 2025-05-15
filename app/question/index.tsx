@@ -73,17 +73,19 @@ export default function QuestionScreen() {
       onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: (e) => {
         const { locationX, locationY } = e.nativeEvent;
-        setCurrentPath(`M${locationX},${locationY}`);
+        setPaths(prev => [...prev, `M${locationX},${locationY}`]);  // Start a new path
       },
       onPanResponderMove: (e) => {
         const { locationX, locationY } = e.nativeEvent;
-        setCurrentPath(prev => `${prev} L${locationX},${locationY}`);
+        setPaths(prev => {
+          const updated = [...prev];
+          const last = updated.pop() || '';
+          const newPath = `${last} L${locationX},${locationY}`;
+          return [...updated, newPath];
+        });
       },
       onPanResponderRelease: () => {
-        if (currentPath !== '') {
-          setPaths(prev => [...prev, currentPath]);
-          setCurrentPath('');
-        }
+        // Do nothing: path already added
       },
     })
   ).current;
@@ -161,6 +163,7 @@ export default function QuestionScreen() {
 
   return (
     <LinearGradient colors={['#5F91FF', '#A6A9FF']} style={styles.gradient}>
+      <View style={styles.pointsContainer}><Text style={styles.pointsText}>⭐ {score}</Text></View>
       <View style={styles.container}>
         <View style={styles.progressContainer}>
           <View style={[styles.progressBar, { width: `${(currentIndex / total) * 100}%` }]} />
@@ -184,7 +187,7 @@ export default function QuestionScreen() {
               <>
                 <View style={styles.canvasWrapper} {...panResponder.panHandlers}>
                   <Svg style={styles.canvas}>
-                    {[...paths, currentPath].map((d, i) =>
+                    {paths.map((d, i) =>
                       d !== '' ? <Path key={i} d={d} stroke="black" strokeWidth={3} fill="none" /> : null
                     )}
                   </Svg>
@@ -302,4 +305,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     zIndex: 1,
   },
+  pointsContainer: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: '#ffffff88',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  pointsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0047AB',
+  }
 });
