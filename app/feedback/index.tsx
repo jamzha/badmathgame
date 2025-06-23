@@ -24,6 +24,8 @@ export default function FeedbackScreen() {
     correctQuestions,
     incorrectQuestions,
     endSummary,
+    allResponses,
+    configData, 
   } = useLocalSearchParams();
 
   const router = useRouter();
@@ -61,6 +63,8 @@ export default function FeedbackScreen() {
       incorrectQuestions,
       endSummary,
       score,
+      allResponses, 
+      configData, 
       current: (currentIndex + 1).toString(),
     };
 

@@ -42,6 +42,18 @@ export default function ConfigScreen() {
 
   const handleStartGame = () => {
     if (!allSelected) return;
+    const configData = {
+      operation,
+      range,
+      questions,
+      responseType,
+      correctReward: rightReward,
+      correctFeedback: rightFeedback,
+      wrongPenalty,
+      wrongFeedback,
+      endSummary,
+    };
+
     router.push({
         pathname: '/question',
         params: {
@@ -56,6 +68,8 @@ export default function ConfigScreen() {
           wrongPenalty,
           wrongFeedback,
           endSummary,
+          allResponses: encodeURIComponent(JSON.stringify([])), // initialize
+          configData: encodeURIComponent(JSON.stringify(configData)), // save full config
         },
       });
       

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,8 @@ export default function ResultScreen() {
     endSummary,
     correctQuestions,
     incorrectQuestions,
+    configData,
+    allResponses,
   } = useLocalSearchParams();
 
   const router = useRouter();
@@ -22,6 +24,43 @@ export default function ResultScreen() {
     router.replace('/');
   };
 
+  const config = configData ? JSON.parse(decodeURIComponent(configData as string)) : {};
+  const responses = allResponses ? JSON.parse(decodeURIComponent(allResponses as string)) : [];
+
+  useEffect(() => {
+    const submitToMongo = async () => {
+      try {
+        console.log("Submitting:", {
+          config : config,
+          results: responses,
+          finalScore: score,
+          timestamp: new Date().toISOString(),
+        });
+        
+        const res = await fetch('http://cogtoolslab.org:8877/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            config : config,
+            results: responses,
+            finalScore: score,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+        
+        if (!res.ok) {
+          const errMsg = await res.text();
+          throw new Error(`Server responded with ${res.status}: ${errMsg}`);
+        }
+
+      } catch (error) {
+        console.error('Failed to submit data to MongoDB:', error);
+      }
+    };
+
+    submitToMongo();
+  }, []);
+  
   const renderSummary = () => {
     if (endSummary === 'Summarize my answers' && correctQuestions && incorrectQuestions) {
       const correctList = (correctQuestions as string).split(';');
@@ -83,10 +122,11 @@ const styles = StyleSheet.create({
   summaryContainer: { alignItems: 'center', marginBottom: 30 },
   summaryTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 20 },
   columns: { flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: '100%',
-    paddingHorizontal: 10, },
-  column: { flex: 1,
+    paddingHorizontal: 30, },
+  column: { minWidth: 150, 
+    marginHorizontal: 15, 
     alignItems: 'center', },
   columnHeader: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 10 },
   questionText: { color: '#fff', fontSize: 16, marginBottom: 4 },

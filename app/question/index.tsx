@@ -45,7 +45,7 @@ export default function QuestionScreen() {
   const {
     operation, range, questions, current, score, responseType,
     correctReward, correctFeedback, wrongPenalty, wrongFeedback,
-    endSummary, correctCount, correctQuestions, incorrectQuestions
+    endSummary, correctCount, correctQuestions, incorrectQuestions, configData
   } = params;
 
   const router = useRouter();
@@ -58,15 +58,12 @@ export default function QuestionScreen() {
   const [textAnswer, setTextAnswer] = useState<string>('');
   const [paths, setPaths] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState<string>('');
-  const [question, setQuestion] = useState<ReturnType<typeof generateQuestion> | null>(null);
-  const [startTime, setStartTime] = useState<number>(Date.now());
-
-  useEffect(() => {
+  const [question, setQuestion] = useState<ReturnType<typeof generateQuestion>>(() => {
     const op = operation as string;
     const max = getMaxFromRange(range as string);
-    setQuestion(generateQuestion(op, max));
-    setStartTime(Date.now());
-  }, [operation, range]);
+    return generateQuestion(op, max);
+  });  
+  const [startTime, setStartTime] = useState<number>(Date.now());
 
   const panResponder = useRef(
     PanResponder.create({
@@ -131,6 +128,21 @@ export default function QuestionScreen() {
     const currentIncorrectQs = (incorrectQuestions as string)?.split(';').filter(Boolean) || [];
     const updatedIncorrectQs = !isCorrect ? [...currentIncorrectQs, cleanText] : currentIncorrectQs;
 
+    const thisQuestionData = {
+      question: question.questionText,
+      correctAnswer: question.correctAnswer,
+      selectedAnswer: selected ?? textAnswer,
+      isCorrect,
+      responseTime: responseDuration,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const prevAllResponses = params.allResponses
+    ? JSON.parse(decodeURIComponent(params.allResponses as string))
+    : [];
+  
+    const updatedAllData = [...prevAllResponses, thisQuestionData];
+
     router.push({
       pathname: '/feedback',
       params: {
@@ -152,7 +164,9 @@ export default function QuestionScreen() {
         correctCount: updatedCorrect.toString(),
         correctQuestions: updatedCorrectQs.join(';'),
         incorrectQuestions: updatedIncorrectQs.join(';'),
-        endSummary
+        endSummary,
+        allResponses: encodeURIComponent(JSON.stringify(updatedAllData)),
+        configData, 
       },
     });
   };
